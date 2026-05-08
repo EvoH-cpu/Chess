@@ -7,105 +7,91 @@
 #include <windows.h>
 using namespace std;
 
+// Console utility 
+void gotoxy(int x, int y);
+void setColor(int color);
+void resetColor();
+
+// Arrow-key scan codes returned by _getch() after the 0xE0 / 0x00 prefix
+#define KEY_UP    72
+#define KEY_DOWN  80
+#define KEY_LEFT  75
+#define KEY_RIGHT 77
+#define KEY_ENTER 13
+#define KEY_ESC   27
+
 class Player {
     string name;
-    bool isWhite;  // true for white, false for black
+    bool isWhite;
 
 public:
-    // Constructor
     Player(const string& playerName, bool white);
-
-    // Destructor
     ~Player();
-    // Getter functions
     string getName() const;
     bool getIsWhite() const;
+    void setName(const string& newName);
+    void setIsWhite(bool white);
 };
 
-// Base class for all chess pieces - demonstrates inheritance and encapsulation
+// Base class for all chess pieces
 class Piece {
 protected:
-    char symbol;           // Character representation
-	bool isWhite;          // checks white piece or black piece
-    int row;               // Current row position (0-7)
-    int col;               // Current column position (0-7)
-    bool hasMoved;         // Track if piece has moved (for en passant, castling)
+    char symbol;
+    bool isWhite;
+    int row;
+    int col;
+    bool hasMoved;
 
 public:
-    // Constructor
     Piece(char sym, bool white, int r, int c);
-
-    // Virtual destructor
     virtual ~Piece();
 
-    // Getter functions
     char getSymbol() const;
     bool getIsWhite() const;
     int getRow() const;
     int getCol() const;
     bool getHasMoved() const;
 
-    // Setter functions
     void setPosition(int r, int c);
     void setHasMoved(bool moved);
-   
-    // Pure virtual function
+
     virtual bool isValidMove(int targetRow, int targetCol, Piece*** board, Piece*** lastBoard = nullptr) = 0;
 
-	//checks boundary of board
     bool isWithinBoard(int r, int c) const;
-
-	//checks if target square is empty or occupied by enemy piece
     bool isEmptyOrEnemy(int targetRow, int targetCol, Piece*** board) const;
-
-	//checks for clear path between current position and target position 
     bool isPathClear(int targetRow, int targetCol, Piece*** board) const;
 };
 
-// Pawn class
 class Pawn : public Piece {
 public:
-    // Constructor
     Pawn(bool white, int row, int col);
-    // pawn move
     bool isValidMove(int targetRow, int targetCol, Piece*** board, Piece*** lastBoard = nullptr) override;
 };
 
-// Rook class 
 class Rook : public Piece {
 public:
-    // Constructor
     Rook(bool white, int row, int col);
-    // rook move
     bool isValidMove(int targetRow, int targetCol, Piece*** board, Piece*** lastBoard = nullptr) override;
 };
 
-// Knight class
 class Knight : public Piece {
 public:
-    // Constructor
     Knight(bool white, int row, int col);
-    // knight move
     bool isValidMove(int targetRow, int targetCol, Piece*** board, Piece*** lastBoard = nullptr) override;
 };
 
-// Bishop class
 class Bishop : public Piece {
 public:
-    // Constructor
     Bishop(bool white, int row, int col);
-    // bishop move 
     bool isValidMove(int targetRow, int targetCol, Piece*** board, Piece*** lastBoard = nullptr) override;
 };
 
-// Queen class
 class Queen : public Piece {
 public:
     Queen(bool white, int row, int col);
     bool isValidMove(int targetRow, int targetCol, Piece*** board, Piece*** lastBoard = nullptr) override;
 };
 
-// King class
 class King : public Piece {
 public:
     King(bool white, int row, int col);
@@ -113,108 +99,64 @@ public:
 };
 
 
-// Board class
 class Board {
 private:
-    
     Piece*** board;
-    Piece*** previousBoard;  // Store previous board state
-
-    // Tracks players turn
+    Piece*** previousBoard;
     bool whitesTurn;
 
-    // initialize board with starting positions
     void initializeBoard();
-
-    // place a piece at a specific position
     void placePiece(Piece* piece, int row, int col);
-
-    // clear a square on the board
     void clearSquare(int row, int col);
-
-    // Private helper to copy board state
     void copyBoardState(Piece*** from, Piece*** to);
 
 public:
-    // Constructor
     Board();
-
-    // Destructor 
     ~Board();
 
-    // Display board
-    void display(int selectedRow = -1, int selectedCol = -1) const;
+    // boardOriginX/Y: top-left console position where the board is drawn
+    void display(int cursorRow, int cursorCol,
+                 int selectedRow = -1, int selectedCol = -1,
+                 int boardOriginX = 4, int boardOriginY = 3) const;
 
-    // Move a piece
     bool movePiece(int sourceRow, int sourceCol, int targetRow, int targetCol);
-
-    // Check if a specific square contains a piece
     bool hasPiece(int row, int col) const;
-
-    // Get the piece at a specific square
     Piece* getPiece(int row, int col) const;
-
-    // Check if a king is currently in check
     bool isInCheck(bool isWhiteKing) const;
-
-    // Check if a king is in checkmate
     bool isCheckmate(bool isWhiteKing) const;
-
-    // Get the current turn
     bool getWhitesTurn() const;
-
-    // Switch turn to the other player
     void switchTurn();
-
-    // Find the king piece for a given color
     King* findKing(bool isWhite) const;
-
-    // Check if opponent can attack a given square
     bool canOpponentAttack(int row, int col, bool isWhiteAttacking) const;
 };
 
 
-// Game class 
 class Game {
 private:
-    Board* board;           // The game board
-    bool gameActive;        // Flag to track if game is still running
-    bool gameWon;           // Flag to track if someone won
-    bool isWhiteWinner;     // Flag to track which player won
+    Board* board;
+    bool gameActive;
+    bool gameWon;
+    bool isWhiteWinner;
 
-    int cursorRow;          // Current cursor position (row)
-    int cursorCol;          // Current cursor position (column)
-    int selectedRow;        // Selected piece row (-1 if none)
-    int selectedCol;        // Selected piece column (-1 if none)
+    int cursorRow;
+    int cursorCol;
+    int selectedRow;
+    int selectedCol;
 
+    // Console origin where the board starts
+    static const int BOARD_ORIGIN_X = 4;
+    static const int BOARD_ORIGIN_Y = 3;
 
-    // get input from user
-    int getKeyInput();
-
-    // piece selection and movement
+    int  getKeyInput();
     bool processMove(int key);
-
-    // single game turn
     bool playTurn();
-
-    //  display game status and instructions
     void displayGameStatus() const;
-
-    // Clear screen function
     void clearScreen() const;
+    void drawCursor() const;         
 
 public:
-    // Constructor 
     Game();
-
-    // Destructor 
     ~Game();
-
-    // Main game loop 
     void run();
-
-    // Check if game is still active
     bool isGameActive() const;
-
 };
-
