@@ -3,6 +3,8 @@
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
+#include <vector>
+#include <utility>
 #include <conio.h> 
 #include <windows.h>
 using namespace std;
@@ -10,7 +12,9 @@ using namespace std;
 // Console utility 
 void gotoxy(int x, int y);
 void setColor(int color);
+void setColor(int fg, int bg);
 void resetColor();
+void hideConsoleCursor();
 
 // Arrow-key scan codes returned by _getch() after the 0xE0 / 0x00 prefix
 #define KEY_UP    72
@@ -110,24 +114,29 @@ private:
     void clearSquare(int row, int col);
     void copyBoardState(Piece*** from, Piece*** to);
 
+    bool wouldLeaveKingInCheck(int srcRow, int srcCol, int tgtRow, int tgtCol);
+    bool hasAnyLegalMove(bool isWhite);
+
 public:
     Board();
     ~Board();
 
-    // boardOriginX/Y: top-left console position where the board is drawn
     void display(int cursorRow, int cursorCol,
-                 int selectedRow = -1, int selectedCol = -1,
-                 int boardOriginX = 4, int boardOriginY = 3) const;
+        int selectedRow = -1, int selectedCol = -1,
+        const vector<pair<int, int>>* hints = nullptr,
+        int boardOriginX = 4, int boardOriginY = 3) const;
 
     bool movePiece(int sourceRow, int sourceCol, int targetRow, int targetCol);
     bool hasPiece(int row, int col) const;
     Piece* getPiece(int row, int col) const;
     bool isInCheck(bool isWhiteKing) const;
-    bool isCheckmate(bool isWhiteKing) const;
+    bool isCheckmate(bool isWhiteKing) ; 
     bool getWhitesTurn() const;
     void switchTurn();
     King* findKing(bool isWhite) const;
     bool canOpponentAttack(int row, int col, bool isWhiteAttacking) const;
+
+    vector<pair<int, int>> getLegalMoves(int row, int col);
 };
 
 
@@ -143,6 +152,8 @@ private:
     int selectedRow;
     int selectedCol;
 
+    vector<pair<int, int>> legalMoves;
+
     // Console origin where the board starts
     static const int BOARD_ORIGIN_X = 4;
     static const int BOARD_ORIGIN_Y = 3;
@@ -152,7 +163,7 @@ private:
     bool playTurn();
     void displayGameStatus() const;
     void clearScreen() const;
-    void drawCursor() const;         
+    void drawCursor() const;
 
 public:
     Game();
