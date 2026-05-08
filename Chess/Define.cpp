@@ -10,29 +10,35 @@ void setColor(int color) {
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
 }
 
+void setColor(int fg, int bg) {
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), (bg << 4) | (fg & 0x0F));
+}
+
 void resetColor() {
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7); // default grey on black
 }
 
+void hideConsoleCursor() {
+    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO info;
+    info.dwSize = 1;
+    info.bVisible = FALSE;
+    SetConsoleCursorInfo(h, &info);
+}
+
 //Player
-
-Player::Player(const string& playerName, bool white)
-    : name(playerName), isWhite(white) {}
-
+Player::Player(const string& playerName, bool white) : name(playerName), isWhite(white) {}
 Player::~Player() {}
-
 string Player::getName()    const { return name; }
 bool   Player::getIsWhite() const { return isWhite; }
 void   Player::setName(const string& n) { name = n; }
 void   Player::setIsWhite(bool w) { isWhite = w; }
 
 //Piece base
-
 Piece::Piece(char sym, bool white, int r, int c)
-    : symbol(sym), isWhite(white), row(r), col(c), hasMoved(false) {}
-
+    : symbol(sym), isWhite(white), row(r), col(c), hasMoved(false) {
+}
 Piece::~Piece() {}
-
 char Piece::getSymbol() const { return symbol; }
 bool Piece::getIsWhite() const { return isWhite; }
 int  Piece::getRow() const { return row; }
@@ -65,9 +71,9 @@ bool Piece::isPathClear(int targetRow, int targetCol, Piece*** board) const {
 }
 
 //Piece subclasses 
-
 Pawn::Pawn(bool white, int row, int col)
-    : Piece(white ? 'P' : 'p', white, row, col) {}
+    : Piece(white ? 'P' : 'p', white, row, col) {
+}
 
 bool Pawn::isValidMove(int targetRow, int targetCol, Piece*** board, Piece*** lastBoard) {
     if (!isWithinBoard(targetRow, targetCol)) return false;
@@ -101,7 +107,8 @@ bool Pawn::isValidMove(int targetRow, int targetCol, Piece*** board, Piece*** la
 }
 
 Rook::Rook(bool white, int row, int col)
-    : Piece(white ? 'R' : 'r', white, row, col) {}
+    : Piece(white ? 'R' : 'r', white, row, col) {
+}
 
 bool Rook::isValidMove(int targetRow, int targetCol, Piece*** board, Piece***) {
     if (!isWithinBoard(targetRow, targetCol)) return false;
@@ -112,25 +119,24 @@ bool Rook::isValidMove(int targetRow, int targetCol, Piece*** board, Piece***) {
 }
 
 Knight::Knight(bool white, int row, int col)
-    : Piece(white ? 'N' : 'n', white, row, col) {}
+    : Piece(white ? 'N' : 'n', white, row, col) {
+}
 
 bool Knight::isValidMove(int targetRow, int targetCol, Piece*** board, Piece***) {
     if (!isWithinBoard(targetRow, targetCol)) return false;
     if (targetRow == row && targetCol == col) return false;
 
-    int dr = abs(targetRow - row), 
-        dc = abs(targetCol - col);
-
+    int dr = abs(targetRow - row), dc = abs(targetCol - col);
     if ((dr == 2 && dc == 1) || (dr == 1 && dc == 2))
         return isEmptyOrEnemy(targetRow, targetCol, board);
     return false;
 }
 
 Bishop::Bishop(bool white, int row, int col)
-    : Piece(white ? 'B' : 'b', white, row, col) {}
+    : Piece(white ? 'B' : 'b', white, row, col) {
+}
 
 bool Bishop::isValidMove(int targetRow, int targetCol, Piece*** board, Piece***) {
-
     if (!isWithinBoard(targetRow, targetCol)) return false;
     if (targetRow == row && targetCol == col) return false;
     if (abs(targetRow - row) != abs(targetCol - col)) return false;
@@ -139,7 +145,8 @@ bool Bishop::isValidMove(int targetRow, int targetCol, Piece*** board, Piece***)
 }
 
 Queen::Queen(bool white, int row, int col)
-    : Piece(white ? 'Q' : 'q', white, row, col) {}
+    : Piece(white ? 'Q' : 'q', white, row, col) {
+}
 
 bool Queen::isValidMove(int targetRow, int targetCol, Piece*** board, Piece***) {
     if (!isWithinBoard(targetRow, targetCol)) return false;
@@ -151,7 +158,8 @@ bool Queen::isValidMove(int targetRow, int targetCol, Piece*** board, Piece***) 
 }
 
 King::King(bool white, int row, int col)
-    : Piece(white ? 'K' : 'k', white, row, col) {}
+    : Piece(white ? 'K' : 'k', white, row, col) {
+}
 
 bool King::isValidMove(int targetRow, int targetCol, Piece*** board, Piece***) {
     if (!isWithinBoard(targetRow, targetCol)) return false;
@@ -178,8 +186,7 @@ Board::Board() : whitesTurn(true) {
 Board::~Board() {
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
-        
-             delete board[i][j];   
+            delete board[i][j];
             if (previousBoard[i][j]) { delete previousBoard[i][j]; previousBoard[i][j] = nullptr; }
         }
         delete[] board[i];
@@ -221,26 +228,119 @@ void Board::clearSquare(int row, int col) {
         board[row][col] = nullptr;
 }
 
-void Board::copyBoardState(Piece***, Piece*** to) {
-    for (int i = 0; i < 8; i++)
+// DEEP COPY (fixed)
+void Board::copyBoardState(Piece*** from, Piece*** to) {
+    for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
             if (to[i][j]) { delete to[i][j]; to[i][j] = nullptr; }
+            if (from[i][j]) {
+                char sym = from[i][j]->getSymbol();
+                bool w = from[i][j]->getIsWhite();
+                int r = from[i][j]->getRow();
+                int c = from[i][j]->getCol();
+
+                if (sym == 'P' || sym == 'p') to[i][j] = new Pawn(w, r, c);
+                else if (sym == 'R' || sym == 'r') to[i][j] = new Rook(w, r, c);
+                else if (sym == 'N' || sym == 'n') to[i][j] = new Knight(w, r, c);
+                else if (sym == 'B' || sym == 'b') to[i][j] = new Bishop(w, r, c);
+                else if (sym == 'Q' || sym == 'q') to[i][j] = new Queen(w, r, c);
+                else if (sym == 'K' || sym == 'k') to[i][j] = new King(w, r, c);
+
+                if (to[i][j]) to[i][j]->setHasMoved(from[i][j]->getHasMoved());
+            }
         }
+    }
 }
 
+bool Board::wouldLeaveKingInCheck(int srcRow, int srcCol, int tgtRow, int tgtCol) {
+    Piece* moving = board[srcRow][srcCol];
+    if (!moving) return true;
 
-//  Foreground colors used:
-//    White pieces      : 15 (bright white)
-//    Black pieces      : 11 (bright cyan)  — distinguishes them clearly
-//    Cursor cell       :  2 (green)  when nothing is selected
-//                        14 (yellow) when this cell is selected
-//    Board border/text :  7 (grey)
+    Piece* captured = board[tgtRow][tgtCol];
+    Piece* enPassantCaptured = nullptr;
+
+    bool isEnPassant = (moving->getSymbol() == (moving->getIsWhite() ? 'P' : 'p')) &&
+        (tgtCol != srcCol) && (captured == nullptr);
+
+    if (isEnPassant) {
+        enPassantCaptured = board[srcRow][tgtCol];
+        board[srcRow][tgtCol] = nullptr;
+    }
+
+    int oldRow = moving->getRow();
+    int oldCol = moving->getCol();
+    bool oldMoved = moving->getHasMoved();
+
+    board[tgtRow][tgtCol] = moving;
+    board[srcRow][srcCol] = nullptr;
+    moving->setPosition(tgtRow, tgtCol);
+
+    bool inCheck = isInCheck(moving->getIsWhite());
+
+    // restore
+    board[srcRow][srcCol] = moving;
+    board[tgtRow][tgtCol] = captured;
+    if (isEnPassant) board[srcRow][tgtCol] = enPassantCaptured;
+
+    moving->setPosition(oldRow, oldCol);
+    moving->setHasMoved(oldMoved);
+
+    return inCheck;
+}
+
+vector<pair<int, int>> Board::getLegalMoves(int row, int col) {
+    vector<pair<int, int>> moves;
+    Piece* p = getPiece(row, col);
+    if (!p) return moves;
+
+    for (int r = 0; r < 8; r++) {
+        for (int c = 0; c < 8; c++) {
+            if (p->isValidMove(r, c, board, previousBoard)) {
+                if (!wouldLeaveKingInCheck(row, col, r, c)) {
+                    moves.emplace_back(r, c);
+                }
+            }
+        }
+    }
+    return moves;
+}
+
+bool Board::hasAnyLegalMove(bool isWhite) {
+    for (int r = 0; r < 8; r++) {
+        for (int c = 0; c < 8; c++) {
+            Piece* p = board[r][c];
+            if (p && p->getIsWhite() == isWhite) {
+                for (int tr = 0; tr < 8; tr++) {
+                    for (int tc = 0; tc < 8; tc++) {
+                        if (p->isValidMove(tr, tc, board, previousBoard) &&
+                            !wouldLeaveKingInCheck(r, c, tr, tc)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
+//  Colors used:
+//    Board squares  : light blue / light green
+//    White pieces   : white text
+//    Black pieces   : black text
+//    Cursor/Select  : yellow background
+//    Hints          : grey dots
 
 void Board::display(int curRow, int curCol,
     int selRow, int selCol,
+    const vector<pair<int, int>>* hints,
     int originX, int originY) const
 {
-   
+    const int LIGHT_BLUE = 9;
+    const int LIGHT_GREEN = 10;
+    const int YELLOW = 14;
+    const int GREY = 8;
+
     // Column labels
     gotoxy(originX, originY);
     setColor(7);
@@ -248,6 +348,7 @@ void Board::display(int curRow, int curCol,
 
     // Top border
     gotoxy(originX, originY + 1);
+    setColor(7);
     cout << "  ---------------------------------";
 
     for (int row = 0; row < 8; row++) {
@@ -262,36 +363,41 @@ void Board::display(int curRow, int curCol,
             bool isCursor = (row == curRow && col == curCol);
             bool isSelected = (row == selRow && col == selCol);
 
+            bool isHint = false;
+            if (hints) {
+                for (const auto& h : *hints) {
+                    if (h.first == row && h.second == col) { isHint = true; break; }
+                }
+            }
+
             // Cell separator
             setColor(7);
             cout << "|";
 
-            // Determine cell highlight color
-            if (isSelected) setColor(14); // yellow  
-            else if (isCursor) setColor(10); // bright green = cursor
-            else  setColor(7);
+            int bg = ((row + col) % 2 == 0) ? LIGHT_BLUE : LIGHT_GREEN;
+            if (isCursor || isSelected) bg = GREY;
 
-            cout <<" ";
+            // Cell background
+            setColor(7, bg);
+            cout << " ";
 
             Piece* piece = board[row][col];
             if (piece != nullptr) {
-                // Pick piece
-                if (isSelected || isCursor) {
-                    // keep highlight color for the character
-                }
-                else {
-                    setColor(piece->getIsWhite() ? 15 : 11); // white=bright, black=cyan
-                }
+                int fg = piece->getIsWhite() ? 15 : 0;
+                setColor(fg, bg);
                 cout << piece->getSymbol();
             }
+            else if (isHint) {
+                setColor(8, bg);              // dark grey
+                cout << (char)219;            // full block = big dot
+            }
             else {
+                setColor(7, bg);
                 cout << " ";
             }
 
-            // Space after character (keep highlight if cursor/selected)
-            if (isSelected)    setColor(14);
-            else if (isCursor) setColor(10);
-            else               setColor(7);
+            // space after
+            setColor(7, bg);
             cout << " ";
         }
 
@@ -300,6 +406,7 @@ void Board::display(int curRow, int curCol,
 
         // Separator row
         gotoxy(originX, consoleY + 1);
+        setColor(7);
         cout << "  ---------------------------------";
     }
 
@@ -326,12 +433,9 @@ bool Board::movePiece(int srcRow, int srcCol, int tgtRow, int tgtCol) {
     }
 
     if (!moving->isValidMove(tgtRow, tgtCol, board, previousBoard)) return false;
+    if (wouldLeaveKingInCheck(srcRow, srcCol, tgtRow, tgtCol)) return false;
 
-    // Save previous board state
     copyBoardState(board, previousBoard);
-    for (int i = 0; i < 8; i++)
-        for (int j = 0; j < 8; j++)
-            previousBoard[i][j] = board[i][j];
 
     if (isEnPassant && board[srcRow][tgtCol] != nullptr) {
         delete board[srcRow][tgtCol];
@@ -379,39 +483,16 @@ bool Board::isInCheck(bool isWhiteKing) const {
     return canOpponentAttack(k->getRow(), k->getCol(), !isWhiteKing);
 }
 
-bool Board::isCheckmate(bool isWhiteKing) const {
+bool Board::isCheckmate(bool isWhiteKing)  {
     if (!isInCheck(isWhiteKing)) return false;
-    King* king = findKing(isWhiteKing);
-    if (!king) return false;
-
-    int kr = king->getRow(), kc = king->getCol();
-    for (int r = kr - 1; r <= kr + 1; r++) {
-        for (int c = kc - 1; c <= kc + 1; c++) {
-            if (r < 0 || r >= 8 || c < 0 || c >= 8) continue;
-            Piece* cap = board[r][c];
-            if (cap && cap->getIsWhite() == isWhiteKing) continue;
-
-            board[r][c] = king;
-            board[kr][kc] = nullptr;
-            king->setPosition(r, c);
-
-            bool stillCheck = isInCheck(isWhiteKing);
-
-            board[kr][kc] = king;
-            board[r][c] = cap;
-            king->setPosition(kr, kc);
-
-            if (!stillCheck) return false;
-        }
-    }
-    return true;
+    return !hasAnyLegalMove(isWhiteKing);
 }
 
 //Game class implementation
 
 Game::Game()
     : gameActive(true), gameWon(false), isWhiteWinner(false),
-    cursorRow(0), cursorCol(0), selectedRow(-1), selectedCol(-1){
+    cursorRow(0), cursorCol(0), selectedRow(-1), selectedCol(-1) {
 
     board = new Board();
 }
@@ -422,7 +503,7 @@ void Game::clearScreen() const { system("cls"); }
 
 // drawCursor
 void Game::drawCursor() const {
-   int cx = BOARD_ORIGIN_X + 3 + cursorCol * 4 + 1;
+    int cx = BOARD_ORIGIN_X + 3 + cursorCol * 4 + 1;
     int cy = BOARD_ORIGIN_Y + 2 + cursorRow * 2;
     gotoxy(cx, cy);
 }
@@ -434,6 +515,7 @@ void Game::displayGameStatus() const {
     setColor(7);
     for (int i = 0; i < 5; i++) {
         gotoxy(0, statusY + i);
+        cout << "                                                            ";
     }
 
     gotoxy(0, statusY);
@@ -460,7 +542,7 @@ void Game::displayGameStatus() const {
     gotoxy(0, statusY + 3);
     cout << "  P=Pawn  R=Rook  N=Knight  B=Bishop  Q=Queen  K=King";
     gotoxy(0, statusY + 4);
-    cout << "  UPPER=White  lower=Black   " << "  [Green=cursor]  [Yellow = selected]";
+    cout << "  UPPER=White  lower=Black   " << "  [Yellow=cursor/selected]";
 
     resetColor();
 }
@@ -468,10 +550,9 @@ void Game::displayGameStatus() const {
 // Key reading
 int Game::getKeyInput() {
     int key = _getch();
-    // Arrow keys send 0xE0 (224) or 0x00 as a prefix
     if (key == 0xE0 || key == 0x00) {
-        key = _getch();   // read actual scan code
-        return -(key);    // return negative so we can tell it apart
+        key = _getch();
+        return -(key);
     }
     return key;
 }
@@ -492,17 +573,17 @@ bool Game::processMove(int key) {
     }
     else if (key == KEY_ENTER || key == '\n' || key == '\r') {
         if (selectedRow == -1) {
-            // Select piece
             Piece* piece = board->getPiece(cursorRow, cursorCol);
             if (piece && piece->getIsWhite() == board->getWhitesTurn()) {
                 selectedRow = cursorRow;
                 selectedCol = cursorCol;
+                legalMoves = board->getLegalMoves(selectedRow, selectedCol);
             }
         }
         else {
-            // Attempt move
             if (board->movePiece(selectedRow, selectedCol, cursorRow, cursorCol)) {
                 selectedRow = selectedCol = -1;
+                legalMoves.clear();
 
                 bool opponent = !board->getWhitesTurn();
                 if (board->isCheckmate(opponent)) {
@@ -514,8 +595,8 @@ bool Game::processMove(int key) {
                 board->switchTurn();
             }
             else {
-                // Invalid move — deselect
                 selectedRow = selectedCol = -1;
+                legalMoves.clear();
             }
         }
     }
@@ -527,13 +608,14 @@ bool Game::processMove(int key) {
     return true;
 }
 
-// Single turn (redraw only what changed)
+// Single turn
 bool Game::playTurn() {
     board->display(cursorRow, cursorCol,
         selectedRow, selectedCol,
+        &legalMoves,
         BOARD_ORIGIN_X, BOARD_ORIGIN_Y);
     displayGameStatus();
-    drawCursor();  // park blinking cursor inside current cell
+    drawCursor();
 
     int key = getKeyInput();
     return processMove(key);
@@ -542,6 +624,7 @@ bool Game::playTurn() {
 // Main game loop
 void Game::run() {
     clearScreen();
+    hideConsoleCursor();
 
     gotoxy(0, 0);
     setColor(15);
@@ -551,7 +634,6 @@ void Game::run() {
     cout << "  Press ENTER to start...";
     resetColor();
 
-    // Wait for ENTER
     while (true) { int k = _getch(); if (k == KEY_ENTER || k == '\r') break; }
 
     clearScreen();
