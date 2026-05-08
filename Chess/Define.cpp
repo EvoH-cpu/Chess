@@ -313,7 +313,7 @@ vector<pair<int, int>> Board::getLegalMoves(int row, int col) {
     }
     return moves;
 }
-
+//checking for legal moves for current player
 bool Board::LegalMove(bool isWhite) {
     for (int r = 0; r < 8; r++) {
         for (int c = 0; c < 8; c++) {
@@ -340,6 +340,8 @@ bool Board::LegalMove(bool isWhite) {
 //    Cursor/Select  : yellow background
 //    Hints          : grey dots
 
+
+//displaying the board
 void Board::display(int curRow, int curCol,
     int selRow, int selCol,
     const vector<pair<int, int>>* hints,
