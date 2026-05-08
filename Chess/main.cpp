@@ -1,14 +1,11 @@
 #include "Chess.h"
 
-// Main function
 int main() {
     try {
-        Game* game = new Game();
-        game->run();
-        delete game;
-        game = nullptr;
+        Game game;
+        game.run();
     }
-    catch (exception& e) {
+    catch (const exception& e) {
         cerr << "An error occurred: " << e.what() << endl;
         return 1;
     }
