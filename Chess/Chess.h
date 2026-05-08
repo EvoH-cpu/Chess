@@ -3,7 +3,24 @@
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
+#include <conio.h> 
+#include <windows.h>
 using namespace std;
+
+class Player {
+    string name;
+    bool isWhite;  // true for white, false for black
+
+public:
+    // Constructor
+    Player(const string& playerName, bool white);
+
+    // Destructor
+    ~Player();
+    // Getter functions
+    string getName() const;
+    bool getIsWhite() const;
+};
 
 // Base class for all chess pieces - demonstrates inheritance and encapsulation
 class Piece {

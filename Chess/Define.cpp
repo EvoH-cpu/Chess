@@ -1,6 +1,22 @@
 #include"Chess.h"
 
-//piece class implementation
+//player class implementation
+
+//constructor
+Player::Player(const string& playerName, bool white)
+    : name(playerName), isWhite(white) {}
+
+//destructor
+Player::~Player() { cout << "Player " << name << " destroyed." << endl; }
+//getters
+string Player::getName() const { return name; }
+bool Player::getIsWhite() const { return isWhite; }
+
+//setters
+void Player::setName(const string& newName) { name = newName; }
+void Player::setIsWhite(bool white) { isWhite = white; }
+
+//piece class base implementation
 
 //constructor 
 Piece::Piece(char sym, bool white, int r, int c)
