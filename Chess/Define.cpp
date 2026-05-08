@@ -1,4 +1,18 @@
 #include"Chess.h"
+#include <conio.h>
+#include <windows.h>
+
+namespace {
+    constexpr int KEY_UP = 1001;
+    constexpr int KEY_DOWN = 1002;
+    constexpr int KEY_LEFT = 1003;
+    constexpr int KEY_RIGHT = 1004;
+
+    void getoxy(int x, int y) {
+        COORD pos{ static_cast<SHORT>(x), static_cast<SHORT>(y) };
+        SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
+    }
+}
 
 //player class implementation
 
@@ -529,13 +543,30 @@ void Game::displayGameStatus() const {
     cout << "- Uppercase: White, Lowercase: Black" << endl << endl;
 }
 
+int Game::getKeyInput() {
+    int ch = _getch();
+
+    if (ch == 0 || ch == 224) {
+        int arrow = _getch();
+        switch (arrow) {
+            case 72: return KEY_UP;
+            case 80: return KEY_DOWN;
+            case 75: return KEY_LEFT;
+            case 77: return KEY_RIGHT;
+            default: return arrow;
+        }
+    }
+
+    if (ch == 13) return '\n';
+    return ch;
+}
 
 bool Game::processMove(int key) {
     // Arrow key handling 
-    if (key == 'w' || key == 'W') cursorRow = (cursorRow - 1 + 8) % 8;  // Up
-    else if (key == 's' || key == 'S') cursorRow = (cursorRow + 1) % 8;  // Down
-    else if (key == 'a' || key == 'A') cursorCol = (cursorCol - 1 + 8) % 8;  // Left
-    else if (key == 'd' || key == 'D') cursorCol = (cursorCol + 1) % 8;  // Right
+    if (key == KEY_UP || key == 'w' || key == 'W') cursorRow = (cursorRow - 1 + 8) % 8;  // Up
+    else if (key == KEY_DOWN || key == 's' || key == 'S') cursorRow = (cursorRow + 1) % 8;  // Down
+    else if (key == KEY_LEFT || key == 'a' || key == 'A') cursorCol = (cursorCol - 1 + 8) % 8;  // Left
+    else if (key == KEY_RIGHT || key == 'd' || key == 'D') cursorCol = (cursorCol + 1) % 8;  // Right
     else if (key == '\n' || key == '\r') {  // ENTER key
         if (selectedRow == -1 && selectedCol == -1) {
             // Select a piece
@@ -585,14 +616,16 @@ bool Game::playTurn() {
     displayGameStatus();
     board->display(selectedRow, selectedCol);
 
+    getoxy(0, 20);
     cout << "Cursor at: " << (char)('A' + cursorCol) << (8 - cursorRow);
     if (selectedRow != -1 && selectedCol != -1) {
         cout << " | Selected: " << (char)('A' + selectedCol) << (8 - selectedRow);
     }
-    cout << "\n";
+    cout << "      ";
 
-    cout << "Enter move (WASD to move, ENTER to select, Q to quit): ";
-    int key = cin.get();
+    getoxy(0, 22);
+    cout << "Enter move (Arrow keys/WASD, ENTER to select, Q to quit): ";
+    int key = getKeyInput();
 
     return processMove(key);
 }
