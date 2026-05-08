@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="Chess/Chess.vcxproj" />
+  <Project Path="../../../../source/repos/EvoH-cpu/Chess/Chess/Chess.vcxproj" Id="dcf5cdd4-1a26-4327-809f-c4a3468154f7" />
 </Solution>
