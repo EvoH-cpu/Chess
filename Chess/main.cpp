@@ -1,26 +1,16 @@
 #include "Chess.h"
 
-
-// Main function - initializes and runs the chess game
+//main Function
 int main() {
+    //custom exceptions
     try {
-        // Create a new game instance
-        Game* game = new Game();
-
-        // Run the game loop 
-        game->run();
-
-
-        // Clean up allocated memory
-        delete game;
-        game = nullptr;
-
+        Game game;
+        game.run();
     }
-    catch (exception& e) {
-        // Exception handling for any runtime errors
+    // Catch any exceptions thrown during the game
+	catch (const exception& e) {
         cerr << "An error occurred: " << e.what() << endl;
         return 1;
     }
-
-    return 0; 
+    return 0;
 }
