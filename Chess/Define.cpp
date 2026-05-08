@@ -29,15 +29,14 @@ void hideConsoleCursor() {
 //Player
 Player::Player(const string& playerName, bool white) : name(playerName), isWhite(white) {}
 Player::~Player() {}
-string Player::getName()    const { return name; }
+string Player::getName() const { return name; }
 bool   Player::getIsWhite() const { return isWhite; }
 void   Player::setName(const string& n) { name = n; }
 void   Player::setIsWhite(bool w) { isWhite = w; }
 
-//Piece base
+//Piece base class implentation
 Piece::Piece(char sym, bool white, int r, int c)
-    : symbol(sym), isWhite(white), row(r), col(c), hasMoved(false) {
-}
+    : symbol(sym), isWhite(white), row(r), col(c), hasMoved(false) {}
 Piece::~Piece() {}
 char Piece::getSymbol() const { return symbol; }
 bool Piece::getIsWhite() const { return isWhite; }
@@ -52,12 +51,14 @@ bool Piece::isWithinBoard(int r, int c) const {
     return r >= 0 && r < 8 && c >= 0 && c < 8;
 }
 
+//checking target square 
 bool Piece::isEmptyOrEnemy(int targetRow, int targetCol, Piece*** board) const {
     if (!isWithinBoard(targetRow, targetCol)) return false;
     Piece* t = board[targetRow][targetCol];
     return t == nullptr || t->isWhite != this->isWhite;
 }
 
+// checking path to the target square
 bool Piece::isPathClear(int targetRow, int targetCol, Piece*** board) const {
     int dr = (targetRow > row) ? 1 : (targetRow < row) ? -1 : 0;
     int dc = (targetCol > col) ? 1 : (targetCol < col) ? -1 : 0;
@@ -71,9 +72,10 @@ bool Piece::isPathClear(int targetRow, int targetCol, Piece*** board) const {
 }
 
 //Piece subclasses 
+
+//pawn class implentation
 Pawn::Pawn(bool white, int row, int col)
-    : Piece(white ? 'P' : 'p', white, row, col) {
-}
+    : Piece(white ? 'P' : 'p', white, row, col) {}
 
 bool Pawn::isValidMove(int targetRow, int targetCol, Piece*** board, Piece*** lastBoard) {
     if (!isWithinBoard(targetRow, targetCol)) return false;
@@ -106,9 +108,9 @@ bool Pawn::isValidMove(int targetRow, int targetCol, Piece*** board, Piece*** la
     return false;
 }
 
+//rook class implementation
 Rook::Rook(bool white, int row, int col)
-    : Piece(white ? 'R' : 'r', white, row, col) {
-}
+    : Piece(white ? 'R' : 'r', white, row, col) {}
 
 bool Rook::isValidMove(int targetRow, int targetCol, Piece*** board, Piece***) {
     if (!isWithinBoard(targetRow, targetCol)) return false;
@@ -118,9 +120,9 @@ bool Rook::isValidMove(int targetRow, int targetCol, Piece*** board, Piece***) {
         isEmptyOrEnemy(targetRow, targetCol, board);
 }
 
+//knight class implementation
 Knight::Knight(bool white, int row, int col)
-    : Piece(white ? 'N' : 'n', white, row, col) {
-}
+    : Piece(white ? 'N' : 'n', white, row, col) {}
 
 bool Knight::isValidMove(int targetRow, int targetCol, Piece*** board, Piece***) {
     if (!isWithinBoard(targetRow, targetCol)) return false;
@@ -132,9 +134,9 @@ bool Knight::isValidMove(int targetRow, int targetCol, Piece*** board, Piece***)
     return false;
 }
 
+//bishop class implementation
 Bishop::Bishop(bool white, int row, int col)
-    : Piece(white ? 'B' : 'b', white, row, col) {
-}
+    : Piece(white ? 'B' : 'b', white, row, col) {}
 
 bool Bishop::isValidMove(int targetRow, int targetCol, Piece*** board, Piece***) {
     if (!isWithinBoard(targetRow, targetCol)) return false;
@@ -144,9 +146,9 @@ bool Bishop::isValidMove(int targetRow, int targetCol, Piece*** board, Piece***)
         isEmptyOrEnemy(targetRow, targetCol, board);
 }
 
+//queen class implementation
 Queen::Queen(bool white, int row, int col)
-    : Piece(white ? 'Q' : 'q', white, row, col) {
-}
+    : Piece(white ? 'Q' : 'q', white, row, col) {}
 
 bool Queen::isValidMove(int targetRow, int targetCol, Piece*** board, Piece***) {
     if (!isWithinBoard(targetRow, targetCol)) return false;
@@ -157,9 +159,9 @@ bool Queen::isValidMove(int targetRow, int targetCol, Piece*** board, Piece***) 
         isEmptyOrEnemy(targetRow, targetCol, board);
 }
 
+//king class implementation
 King::King(bool white, int row, int col)
-    : Piece(white ? 'K' : 'k', white, row, col) {
-}
+    : Piece(white ? 'K' : 'k', white, row, col) {}
 
 bool King::isValidMove(int targetRow, int targetCol, Piece*** board, Piece***) {
     if (!isWithinBoard(targetRow, targetCol)) return false;
@@ -168,7 +170,7 @@ bool King::isValidMove(int targetRow, int targetCol, Piece*** board, Piece***) {
     return isEmptyOrEnemy(targetRow, targetCol, board);
 }
 
-//Board
+//Board setup 
 Board::Board() : whitesTurn(true) {
     board = new Piece * *[8];
     previousBoard = new Piece * *[8];
@@ -218,17 +220,19 @@ void Board::initializeBoard() {
     placePiece(new King(false, 0, 4), 0, 4);
 }
 
+//placing single piece on board
 void Board::placePiece(Piece* piece, int row, int col) {
     if (row >= 0 && row < 8 && col >= 0 && col < 8)
         board[row][col] = piece;
 }
 
+//setting target square to nullptr
 void Board::clearSquare(int row, int col) {
     if (row >= 0 && row < 8 && col >= 0 && col < 8)
         board[row][col] = nullptr;
 }
 
-// DEEP COPY (fixed)
+
 void Board::copyBoardState(Piece*** from, Piece*** to) {
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
@@ -253,14 +257,16 @@ void Board::copyBoardState(Piece*** from, Piece*** to) {
 }
 
 bool Board::wouldLeaveKingInCheck(int srcRow, int srcCol, int tgtRow, int tgtCol) {
-    Piece* moving = board[srcRow][srcCol];
+	Piece* moving = board[srcRow][srcCol]; // get the piece being moved
     if (!moving) return true;
 
-    Piece* captured = board[tgtRow][tgtCol];
+    Piece* captured = board[tgtRow][tgtCol]; // piece at target square
     Piece* enPassantCaptured = nullptr;
 
+    //checking en passant condition
     bool isEnPassant = (moving->getSymbol() == (moving->getIsWhite() ? 'P' : 'p')) &&
         (tgtCol != srcCol) && (captured == nullptr);
+
 
     if (isEnPassant) {
         enPassantCaptured = board[srcRow][tgtCol];
@@ -270,6 +276,7 @@ bool Board::wouldLeaveKingInCheck(int srcRow, int srcCol, int tgtRow, int tgtCol
     int oldRow = moving->getRow();
     int oldCol = moving->getCol();
     bool oldMoved = moving->getHasMoved();
+
 
     board[tgtRow][tgtCol] = moving;
     board[srcRow][srcCol] = nullptr;
@@ -483,7 +490,7 @@ bool Board::isInCheck(bool isWhiteKing) const {
     return canOpponentAttack(k->getRow(), k->getCol(), !isWhiteKing);
 }
 
-bool Board::isCheckmate(bool isWhiteKing)  {
+bool Board::isCheckmate(bool isWhiteKing) {
     if (!isInCheck(isWhiteKing)) return false;
     return !hasAnyLegalMove(isWhiteKing);
 }
@@ -607,6 +614,8 @@ bool Game::processMove(int key) {
 
     return true;
 }
+//check active status
+bool Game::isGameActive() const { return gameActive; }
 
 // Single turn
 bool Game::playTurn() {
@@ -630,6 +639,21 @@ void Game::run() {
     setColor(15);
     cout << " WELCOME TO CHESS GAME ";
     setColor(7);
+
+    //storing player name
+    string player1Name, player2Name;
+    cout << "Enter Player 1 Name: ";
+    cin >> player1Name;
+    cout << "Enter Player 2 Name: ";
+    cin >> player2Name;
+
+    //creating player objects
+    Player player1(player1Name, true);
+    Player player2(player2Name, false);
+
+    clearScreen();
+
+    cout << "\n\n  Instructions:\n" << endl;
     cout << "\n  Arrow Keys / WASD: move cursor \n  ENTER: select & move \n  Q: quit\n" << endl;
     cout << "  Press ENTER to start...";
     resetColor();
@@ -640,7 +664,7 @@ void Game::run() {
 
     gotoxy(0, 0);
     setColor(15);
-    cout << "\t CHESS BOARD" << endl;
+    cout << "\t    CHESS BOARD" << endl;
     resetColor();
 
     while (gameActive) {
@@ -653,14 +677,12 @@ void Game::run() {
     cout << "\n\n GAME OVER!\n\n";
     if (gameWon) {
         setColor(15);
-        string winner = isWhiteWinner ? "WHITE" : "BLACK";
-        cout << "   Congratulations! " << winner << " WINS!\n\n";
+        string winner = isWhiteWinner ? player1.getName() : player2.getName();
+        cout << "   Congratulations! " << winner << " WINS!\n" << endl;
     }
     else {
         setColor(7);
-        cout << "   Game ended. Thanks for playing!\n\n";
+        cout << "   Game ended. Thanks for playing The Game!\n\n";
     }
     resetColor();
 }
-
-bool Game::isGameActive() const { return gameActive; }
